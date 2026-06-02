@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Starlink Data Usage</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0b0d17;
+    color: #e2e8f0;
+    padding: 2rem 1rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  h1 { color: #fff; margin-bottom: 0.5rem; font-size: 1.8rem; }
+  .subtitle { color: #94a3b8; margin-bottom: 2rem; font-size: 0.95rem; }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .card {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid #334155;
+  }
+  .card h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.5rem; }
+  .card .value { font-size: 1.6rem; font-weight: 700; color: #fff; }
+  .card .unit { font-size: 0.85rem; color: #64748b; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
+  th, td { padding: 0.65rem 0.75rem; text-align: left; font-size: 0.9rem; }
+  th { background: #1e293b; color: #cbd5e1; font-weight: 600; border-bottom: 2px solid #334155; }
+  td { border-bottom: 1px solid #1e293b; }
+  tr:hover td { background: #1e293b; }
+  .section-title { font-size: 1.2rem; color: #fff; margin: 2rem 0 1rem; }
+  .bar { height: 6px; background: #334155; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .bar-fill { height: 100%; background: #3b82f6; border-radius: 3px; }
+</style>
+</head>
+<body>
+<h1>Starlink Data Usage</h1>
+<p class="subtitle">Daily and monthly totals from https://starlink.com/account/service-line/AST-2293597-46342-54</p>
+
+<div id="summary-cards" class="cards"></div>
+
+<h2 class="section-title">Monthly Totals</h2>
+<table id="monthly-table">
+  <thead><tr><th>Month</th><th>Download (GB)</th><th>Upload (GB)</th><th>Total (GB)</th><th>Days</th><th>Avg/Day (GB)</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<h2 class="section-title">Daily Usage</h2>
+<table id="daily-table">
+  <thead><tr><th>Date</th><th>Download (GB)</th><th>Upload (GB)</th><th>Total (GB)</th><th>Relative</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<script>
+const daily = [
+  {date:"2025-11-17",download_gb:9.63,upload_gb:2.12,total_gb:11.75},
+  {date:"2025-11-18",download_gb:16.06,upload_gb:3.52,total_gb:19.58},
+  {date:"2025-11-19",download_gb:19.88,upload_gb:4.37,total_gb:24.25},
+  {date:"2025-11-20",download_gb:5.91,upload_gb:1.3,total_gb:7.21},
+  {date:"2025-11-21",download_gb:19.83,upload_gb:4.35,total_gb:24.18},
+  {date:"2025-11-22",download_gb:17.95,upload_gb:3.94,total_gb:21.89},
+  {date:"2025-11-23",download_gb:11.73,upload_gb:2.57,total_gb:14.3},
+  {date:"2025-11-24",download_gb:8.5,upload_gb:1.87,total_gb:10.37},
+  {date:"2025-11-25",download_gb:22.46,upload_gb:4.93,total_gb:27.39},
+  {date:"2025-11-26",download_gb:11.66,upload_gb:2.56,total_gb:14.22},
+  {date:"2025-11-27",download_gb:7.41,upload_gb:1.63,total_gb:9.04},
+  {date:"2025-11-28",download_gb:7.49,upload_gb:1.64,total_gb:9.13},
+  {date:"2025-11-29",download_gb:20.55,upload_gb:4.51,total_gb:25.06},
+  {date:"2025-11-30",download_gb:16.31,upload_gb:3.58,total_gb:19.89},
+  {date:"2025-12-01",download_gb:17.59,upload_gb:3.86,total_gb:21.45},
+  {date:"2025-12-02",download_gb:16.39,upload_gb:3.6,total_gb:19.99},
+  {date:"2025-12-03",download_gb:13.41,upload_gb:2.94,total_gb:16.35},
+  {date:"2025-12-04",download_gb:20.15,upload_gb:4.42,total_gb:24.57},
+  {date:"2025-12-05",download_gb:10.98,upload_gb:2.41,total_gb:13.39},
+  {date:"2025-12-06",download_gb:13.65,upload_gb:3.0,total_gb:16.65},
+  {date:"2025-12-07",download_gb:17.93,upload_gb:3.94,total_gb:21.87},
+  {date:"2025-12-08",download_gb:14.68,upload_gb:3.22,total_gb:17.9},
+  {date:"2025-12-09",download_gb:18.43,upload_gb:4.04,total_gb:22.47},
+  {date:"2025-12-10",download_gb:14.05,upload_gb:3.08,total_gb:17.13},
+  {date:"2025-12-11",download_gb:16.01,upload_gb:3.51,total_gb:19.52},
+  {date:"2025-12-12",download_gb:5.85,upload_gb:1.28,total_gb:7.13},
+  {date:"2025-12-13",download_gb:8.65,upload_gb:1.9,total_gb:10.55},
+  {date:"2025-12-14",download_gb:9.6,upload_gb:2.11,total_gb:11.71},
+  {date:"2025-12-15",download_gb:6.37,upload_gb:1.4,total_gb:7.77},
+  {date:"2025-12-16",download_gb:8.73,upload_gb:1.92,total_gb:10.65},
+  {date:"2025-12-17",download_gb:6.7,upload_gb:1.47,total_gb:8.17},
+  {date:"2025-12-18",download_gb:9.43,upload_gb:2.07,total_gb:11.5},
+  {date:"2025-12-19",download_gb:14.94,upload_gb:3.28,total_gb:18.22},
+  {date:"2025-12-20",download_gb:10.77,upload_gb:2.36,total_gb:13.13},
+  {date:"2025-12-21",download_gb:10.85,upload_gb:2.38,total_gb:13.23},
+  {date:"2025-12-22",download_gb:8.37,upload_gb:1.84,total_gb:10.21},
+  {date:"2025-12-23",download_gb:9.26,upload_gb:2.03,total_gb:11.29},
+  {date:"2025-12-24",download_gb:19.58,upload_gb:4.3,total_gb:23.88},
+  {date:"2025-12-25",download_gb:15.14,upload_gb:3.32,total_gb:18.46},
+  {date:"2025-12-26",download_gb:14.53,upload_gb:3.19,total_gb:17.72},
+  {date:"2025-12-27",download_gb:7.78,upload_gb:1.71,total_gb:9.49},
+  {date:"2025-12-28",download_gb:16.38,upload_gb:3.6,total_gb:19.98},
+  {date:"2025-12-29",download_gb:7.66,upload_gb:1.68,total_gb:9.34},
+  {date:"2025-12-30",download_gb:10.99,upload_gb:2.41,total_gb:13.4},
+  {date:"2025-12-31",download_gb:20.4,upload_gb:4.48,total_gb:24.88},
+  {date:"2026-01-01",download_gb:17.28,upload_gb:3.79,total_gb:21.07},
+  {date:"2026-01-02",download_gb:15.8,upload_gb:3.47,total_gb:19.27},
+  {date:"2026-01-03",download_gb:18.07,upload_gb:3.97,total_gb:22.04},
+  {date:"2026-01-04",download_gb:20.88,upload_gb:4.58,total_gb:25.46},
+  {date:"2026-01-05",download_gb:19.7,upload_gb:4.32,total_gb:24.02},
+  {date:"2026-01-06",download_gb:9.99,upload_gb:2.19,total_gb:12.18},
+  {date:"2026-01-07",download_gb:6.49,upload_gb:1.42,total_gb:7.91},
+  {date:"2026-01-08",download_gb:11.52,upload_gb:2.53,total_gb:14.05},
+  {date:"2026-01-09",download_gb:10.67,upload_gb:2.34,total_gb:13.01},
+  {date:"2026-01-10",download_gb:9.66,upload_gb:2.12,total_gb:11.78},
+  {date:"2026-01-11",download_gb:22.66,upload_gb:4.97,total_gb:27.63},
+  {date:"2026-01-12",download_gb:21.48,upload_gb:4.71,total_gb:26.19},
+  {date:"2026-01-13",download_gb:11.5,upload_gb:2.53,total_gb:14.03},
+  {date:"2026-01-14",download_gb:17.56,upload_gb:3.85,total_gb:21.41},
+  {date:"2026-01-15",download_gb:12.94,upload_gb:2.84,total_gb:15.78},
+  {date:"2026-01-16",download_gb:22.16,upload_gb:4.86,total_gb:27.02},
+  {date:"2026-01-17",download_gb:14.06,upload_gb:3.09,total_gb:17.15},
+  {date:"2026-01-18",download_gb:10.62,upload_gb:2.33,total_gb:12.95},
+  {date:"2026-01-19",download_gb:10.3,upload_gb:2.26,total_gb:12.56},
+  {date:"2026-01-20",download_gb:15.88,upload_gb:3.49,total_gb:19.37},
+  {date:"2026-01-21",download_gb:10.58,upload_gb:2.32,total_gb:12.9},
+  {date:"2026-01-22",download_gb:16.29,upload_gb:3.58,total_gb:19.87},
+  {date:"2026-01-23",download_gb:21.85,upload_gb:4.8,total_gb:26.65},
+  {date:"2026-01-24",download_gb:13.01,upload_gb:2.85,total_gb:15.86},
+  {date:"2026-01-25",download_gb:9.81,upload_gb:2.15,total_gb:11.96},
+  {date:"2026-01-26",download_gb:23.62,upload_gb:5.19,total_gb:28.81},
+  {date:"2026-01-27",download_gb:14.96,upload_gb:3.29,total_gb:18.25},
+  {date:"2026-01-28",download_gb:7.53,upload_gb:1.65,total_gb:9.18},
+  {date:"2026-01-29",download_gb:6.76,upload_gb:1.48,total_gb:8.24},
+  {date:"2026-01-30",download_gb:7.86,upload_gb:1.73,total_gb:9.59},
+  {date:"2026-01-31",download_gb:17.06,upload_gb:3.74,total_gb:20.8},
+  {date:"2026-02-01",download_gb:8.22,upload_gb:1.81,total_gb:10.03},
+  {date:"2026-02-02",download_gb:5.52,upload_gb:1.21,total_gb:6.73},
+  {date:"2026-02-03",download_gb:2.9,upload_gb:0.64,total_gb:3.54},
+  {date:"2026-02-04",download_gb:5.22,upload_gb:1.15,total_gb:6.37},
+  {date:"2026-02-05",download_gb:9.72,upload_gb:2.13,total_gb:11.85},
+  {date:"2026-02-06",download_gb:6.31,upload_gb:1.38,total_gb:7.69},
+  {date:"2026-02-07",download_gb:9.53,upload_gb:2.09,total_gb:11.62},
+  {date:"2026-02-08",download_gb:8.72,upload_gb:1.92,total_gb:10.64},
+  {date:"2026-02-09",download_gb:2.52,upload_gb:0.55,total_gb:3.07},
+  {date:"2026-02-10",download_gb:7.7,upload_gb:1.69,total_gb:9.39},
+  {date:"2026-02-11",download_gb:7.42,upload_gb:1.63,total_gb:9.05},
+  {date:"2026-02-12",download_gb:6.36,upload_gb:1.4,total_gb:7.76},
+  {date:"2026-02-13",download_gb:4.39,upload_gb:0.96,total_gb:5.35},
+  {date:"2026-02-14",download_gb:7.12,upload_gb:1.56,total_gb:8.68},
+  {date:"2026-02-15",download_gb:3.25,upload_gb:0.71,total_gb:3.96},
+  {date:"2026-02-16",download_gb:5.61,upload_gb:1.23,total_gb:6.84},
+  {date:"2026-02-17",download_gb:5.75,upload_gb:1.26,total_gb:7.01},
+  {date:"2026-02-18",download_gb:9.41,upload_gb:2.06,total_gb:11.47},
+  {date:"2026-02-19",download_gb:8.84,upload_gb:1.94,total_gb:10.78},
+  {date:"2026-02-20",download_gb:4.36,upload_gb:0.96,total_gb:5.32},
+  {date:"2026-02-21",download_gb:6.09,upload_gb:1.34,total_gb:7.43},
+  {date:"2026-02-22",download_gb:3.74,upload_gb:0.82,total_gb:4.56},
+  {date:"2026-02-23",download_gb:9.1,upload_gb:2.0,total_gb:11.1},
+  {date:"2026-02-24",download_gb:8.8,upload_gb:1.93,total_gb:10.73},
+  {date:"2026-02-25",download_gb:4.62,upload_gb:1.01,total_gb:5.63},
+  {date:"2026-02-26",download_gb:7.1,upload_gb:1.56,total_gb:8.66},
+  {date:"2026-02-27",download_gb:6.89,upload_gb:1.51,total_gb:8.4},
+  {date:"2026-02-28",download_gb:3.55,upload_gb:0.78,total_gb:4.33},
+  {date:"2026-03-01",download_gb:3.15,upload_gb:0.69,total_gb:3.84},
+  {date:"2026-03-02",download_gb:2.51,upload_gb:0.55,total_gb:3.06},
+  {date:"2026-03-03",download_gb:3.19,upload_gb:0.7,total_gb:3.89},
+  {date:"2026-03-04",download_gb:2.48,upload_gb:0.54,total_gb:3.02},
+  {date:"2026-03-05",download_gb:0.96,upload_gb:0.21,total_gb:1.17},
+  {date:"2026-03-06",download_gb:1.89,upload_gb:0.41,total_gb:2.3},
+  {date:"2026-03-07",download_gb:1.02,upload_gb:0.22,total_gb:1.24},
+  {date:"2026-03-08",download_gb:3.62,upload_gb:0.8,total_gb:4.42},
+  {date:"2026-03-09",download_gb:3.48,upload_gb:0.76,total_gb:4.24},
+  {date:"2026-03-10",download_gb:3.35,upload_gb:0.73,total_gb:4.08},
+  {date:"2026-03-11",download_gb:1.84,upload_gb:0.4,total_gb:2.24},
+  {date:"2026-03-12",download_gb:1.12,upload_gb:0.25,total_gb:1.37},
+  {date:"2026-03-13",download_gb:3.48,upload_gb:0.76,total_gb:4.24},
+  {date:"2026-03-14",download_gb:3.67,upload_gb:0.81,total_gb:4.48},
+  {date:"2026-03-15",download_gb:1.21,upload_gb:0.26,total_gb:1.47},
+  {date:"2026-03-16",download_gb:2.35,upload_gb:0.52,total_gb:2.87},
+  {date:"2026-03-17",download_gb:1.16,upload_gb:0.25,total_gb:1.41},
+  {date:"2026-03-18",download_gb:3.14,upload_gb:0.69,total_gb:3.83},
+  {date:"2026-03-19",download_gb:3.16,upload_gb:0.69,total_gb:3.85},
+  {date:"2026-03-20",download_gb:1.33,upload_gb:0.29,total_gb:1.62},
+  {date:"2026-03-21",download_gb:2.32,upload_gb:0.51,total_gb:2.83},
+  {date:"2026-03-22",download_gb:2.53,upload_gb:0.56,total_gb:3.09},
+  {date:"2026-03-23",download_gb:1.72,upload_gb:0.38,total_gb:2.1},
+  {date:"2026-03-24",download_gb:3.46,upload_gb:0.76,total_gb:4.22},
+  {date:"2026-03-25",download_gb:2.17,upload_gb:0.48,total_gb:2.65},
+  {date:"2026-03-26",download_gb:1.57,upload_gb:0.34,total_gb:1.91},
+  {date:"2026-03-27",download_gb:2.51,upload_gb:0.55,total_gb:3.06},
+  {date:"2026-03-28",download_gb:3.05,upload_gb:0.67,total_gb:3.72},
+  {date:"2026-03-29",download_gb:1.53,upload_gb:0.34,total_gb:1.87},
+  {date:"2026-03-30",download_gb:1.85,upload_gb:0.41,total_gb:2.26},
+  {date:"2026-03-31",download_gb:3.81,upload_gb:0.84,total_gb:4.65},
+  {date:"2026-04-01",download_gb:15.64,upload_gb:3.43,total_gb:19.07},
+  {date:"2026-04-02",download_gb:12.27,upload_gb:2.69,total_gb:14.96},
+  {date:"2026-04-03",download_gb:13.53,upload_gb:2.97,total_gb:16.5},
+  {date:"2026-04-04",download_gb:7.22,upload_gb:1.59,total_gb:8.81},
+  {date:"2026-04-05",download_gb:8.87,upload_gb:1.95,total_gb:10.82},
+  {date:"2026-04-06",download_gb:10.68,upload_gb:2.34,total_gb:13.02},
+  {date:"2026-04-07",download_gb:14.65,upload_gb:3.22,total_gb:17.87},
+  {date:"2026-04-08",download_gb:8.96,upload_gb:1.97,total_gb:10.93},
+  {date:"2026-04-09",download_gb:8.8,upload_gb:1.93,total_gb:10.73},
+  {date:"2026-04-10",download_gb:6.43,upload_gb:1.41,total_gb:7.84},
+  {date:"2026-04-11",download_gb:15.33,upload_gb:3.37,total_gb:18.7},
+  {date:"2026-04-12",download_gb:8.94,upload_gb:1.96,total_gb:10.9},
+  {date:"2026-04-13",download_gb:19.7,upload_gb:4.32,total_gb:24.02},
+  {date:"2026-04-14",download_gb:18.97,upload_gb:4.16,total_gb:23.13},
+  {date:"2026-04-15",download_gb:6.43,upload_gb:1.41,total_gb:7.84},
+  {date:"2026-04-16",download_gb:9.09,upload_gb:1.99,total_gb:11.08},
+  {date:"2026-04-17",download_gb:15.94,upload_gb:3.5,total_gb:19.44},
+  {date:"2026-04-18",download_gb:8.71,upload_gb:1.91,total_gb:10.62},
+  {date:"2026-04-19",download_gb:7.4,upload_gb:1.63,total_gb:9.03},
+  {date:"2026-04-20",download_gb:20.17,upload_gb:4.43,total_gb:24.6},
+  {date:"2026-04-21",download_gb:14.38,upload_gb:3.16,total_gb:17.54},
+  {date:"2026-04-22",download_gb:12.82,upload_gb:2.81,total_gb:15.63},
+  {date:"2026-04-23",download_gb:17.78,upload_gb:3.9,total_gb:21.68},
+  {date:"2026-04-24",download_gb:18.14,upload_gb:3.98,total_gb:22.12},
+  {date:"2026-04-25",download_gb:8.33,upload_gb:1.83,total_gb:10.16},
+  {date:"2026-04-26",download_gb:6.84,upload_gb:1.5,total_gb:8.34},
+  {date:"2026-04-27",download_gb:12.15,upload_gb:2.67,total_gb:14.82},
+  {date:"2026-04-28",download_gb:12.04,upload_gb:2.64,total_gb:14.68},
+  {date:"2026-04-29",download_gb:12.73,upload_gb:2.79,total_gb:15.52},
+  {date:"2026-04-30",download_gb:16.89,upload_gb:3.71,total_gb:20.6},
+  {date:"2026-05-01",download_gb:14.2,upload_gb:3.12,total_gb:17.32},
+  {date:"2026-05-02",download_gb:18.59,upload_gb:4.08,total_gb:22.67},
+  {date:"2026-05-03",download_gb:6.09,upload_gb:1.34,total_gb:7.43},
+  {date:"2026-05-04",download_gb:10.38,upload_gb:2.28,total_gb:12.66},
+  {date:"2026-05-05",download_gb:9.49,upload_gb:2.08,total_gb:11.57},
+  {date:"2026-05-06",download_gb:16.86,upload_gb:3.7,total_gb:20.56},
+  {date:"2026-05-07",download_gb:8.21,upload_gb:1.8,total_gb:10.01},
+  {date:"2026-05-08",download_gb:7.39,upload_gb:1.62,total_gb:9.01},
+  {date:"2026-05-09",download_gb:11.03,upload_gb:2.42,total_gb:13.45},
+  {date:"2026-05-10",download_gb:10.65,upload_gb:2.34,total_gb:12.99},
+  {date:"2026-05-11",download_gb:8.63,upload_gb:1.9,total_gb:10.53},
+  {date:"2026-05-12",download_gb:8.22,upload_gb:1.81,total_gb:10.03},
+  {date:"2026-05-13",download_gb:17.73,upload_gb:3.89,total_gb:21.62},
+  {date:"2026-05-14",download_gb:10.96,upload_gb:2.4,total_gb:13.36},
+  {date:"2026-05-15",download_gb:16.86,upload_gb:3.7,total_gb:20.56},
+  {date:"2026-05-16",download_gb:12.46,upload_gb:2.74,total_gb:15.2},
+  {date:"2026-05-17",download_gb:5.42,upload_gb:1.19,total_gb:6.61},
+  {date:"2026-05-18",download_gb:18.8,upload_gb:4.13,total_gb:22.93},
+  {date:"2026-05-19",download_gb:16.5,upload_gb:3.62,total_gb:20.12},
+  {date:"2026-05-20",download_gb:18.38,upload_gb:4.03,total_gb:22.41},
+  {date:"2026-05-21",download_gb:17.77,upload_gb:3.9,total_gb:21.67},
+  {date:"2026-05-22",download_gb:16.68,upload_gb:3.66,total_gb:20.34},
+  {date:"2026-05-23",download_gb:7.05,upload_gb:1.55,total_gb:8.6},
+  {date:"2026-05-24",download_gb:11.55,upload_gb:2.54,total_gb:14.09},
+  {date:"2026-05-25",download_gb:7.72,upload_gb:1.69,total_gb:9.41},
+  {date:"2026-05-26",download_gb:10.36,upload_gb:2.28,total_gb:12.64},
+  {date:"2026-05-27",download_gb:5.53,upload_gb:1.21,total_gb:6.74},
+  {date:"2026-05-28",download_gb:10.05,upload_gb:2.21,total_gb:12.26},
+  {date:"2026-05-29",download_gb:18.61,upload_gb:4.08,total_gb:22.69},
+  {date:"2026-05-30",download_gb:8.45,upload_gb:1.85,total_gb:10.3},
+  {date:"2026-05-31",download_gb:15.77,upload_gb:3.46,total_gb:19.23},
+  {date:"2026-06-01",download_gb:9.01,upload_gb:1.98,total_gb:10.99},
+  {date:"2026-06-02",download_gb:8.64,upload_gb:1.9,total_gb:10.54}
+];
+
+const monthly = [
+  {month:"2025-11",total_download_gb:195.37,total_upload_gb:42.89,total_usage_gb:238.26,days:14},
+  {month:"2025-12",total_download_gb:395.25,total_upload_gb:86.75,total_usage_gb:482.0,days:31},
+  {month:"2026-01",total_download_gb:448.55,total_upload_gb:98.44,total_usage_gb:546.99,days:31},
+  {month:"2026-02",total_download_gb:178.76,total_upload_gb:39.23,total_usage_gb:217.99,days:28},
+  {month:"2026-03",total_download_gb:74.63,total_upload_gb:16.37,total_usage_gb:91.0,days:31},
+  {month:"2026-04",total_download_gb:369.83,total_upload_gb:81.17,total_usage_gb:451.0,days:30},
+  {month:"2026-05",total_download_gb:376.39,total_upload_gb:82.62,total_usage_gb:459.01,days:31},
+  {month:"2026-06",total_download_gb:17.65,total_upload_gb:3.88,total_usage_gb:21.53,days:2}
+];
+
+function formatNum(n) {
+  return parseFloat(n).toLocaleString('en-US', {maximumFractionDigits:2});
+}
+
+function render() {
+  const totalGB = daily.reduce((s,r) => s + r.total_gb, 0);
+  const avgGB = totalGB / daily.length;
+  const maxDay = daily.reduce((a,b) => a.total_gb > b.total_gb ? a : b);
+
+  document.getElementById('summary-cards').innerHTML = `
+    <div class="card"><h3>Total Usage</h3><div class="value">${formatNum(totalGB)}</div><div class="unit">GB</div></div>
+    <div class="card"><h3>Daily Average</h3><div class="value">${formatNum(avgGB)}</div><div class="unit">GB / day</div></div>
+    <div class="card"><h3>Highest Day</h3><div class="value">${formatNum(maxDay.total_gb)}</div><div class="unit">GB on ${maxDay.date}</div></div>
+    <div class="card"><h3>Days Tracked</h3><div class="value">${daily.length}</div><div class="unit">days</div></div>
+  `;
+
+  const maxMonthly = Math.max(...monthly.map(r => r.total_usage_gb));
+  document.querySelector('#monthly-table tbody').innerHTML = monthly.map(r => {
+    const avg = r.total_usage_gb / r.days;
+    return `<tr>
+      <td>${r.month}</td>
+      <td>${formatNum(r.total_download_gb)}</td>
+      <td>${formatNum(r.total_upload_gb)}</td>
+      <td><strong>${formatNum(r.total_usage_gb)}</strong></td>
+      <td>${r.days}</td>
+      <td>${formatNum(avg)}</td>
+    </tr>`;
+  }).join('');
+
+  const maxDaily = Math.max(...daily.map(r => r.total_gb));
+  document.querySelector('#daily-table tbody').innerHTML = daily.map(r => {
+    const pct = (r.total_gb / maxDaily) * 100;
+    return `<tr>
+      <td>${r.date}</td>
+      <td>${formatNum(r.download_gb)}</td>
+      <td>${formatNum(r.upload_gb)}</td>
+      <td><strong>${formatNum(r.total_gb)}</strong></td>
+      <td><div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div></td>
+    </tr>`;
+  }).join('');
+}
+
+render();
+</script>
+</body>
+</html>
