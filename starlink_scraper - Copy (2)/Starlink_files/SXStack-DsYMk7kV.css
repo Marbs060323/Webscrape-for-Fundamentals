@@ -1,0 +1,1 @@
+.MuiStack-root :empty+.MuiDivider-root,.MuiStack-root .MuiDivider-root:first-child,.MuiStack-root .MuiDivider-root:last-child,.MuiStack-root .MuiDivider-root+.MuiDivider-root{display:none}

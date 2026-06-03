@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starlink Usage Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(20, 25, 40, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: #4fc3f7;
+            --accent-glow: rgba(79, 195, 247, 0.3);
+        }
+
+        body {
+            background: radial-gradient(ellipse at top, #1a1f35 0%, #0d1117 100%);
+            color: #e0e6ed;
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .stat-card {
+            padding: 24px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: #8899aa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-scrape {
+            background: linear-gradient(135deg, #4fc3f7, #039be5);
+            border: none;
+            color: #000;
+            font-weight: 700;
+            border-radius: 12px;
+            padding: 14px 32px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+        .btn-scrape:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px var(--accent-glow);
+        }
+        .btn-scrape:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-download {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: #e0e6ed;
+            border-radius: 12px;
+            padding: 14px 32px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-download:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .status-idle { background: rgba(136, 153, 170, 0.15); color: #8899aa; }
+        .status-running { background: rgba(79, 195, 247, 0.15); color: var(--accent); }
+        .status-success { background: rgba(102, 187, 106, 0.15); color: #66bb6a; }
+        .status-error { background: rgba(239, 83, 80, 0.15); color: #ef5350; }
+
+        .table-custom {
+            --bs-table-bg: transparent;
+            --bs-table-color: #e0e6ed;
+            --bs-table-border-color: var(--glass-border);
+        }
+        .table-custom thead th {
+            color: #8899aa;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--glass-border);
+            padding: 16px;
+        }
+        .table-custom tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .table-custom tbody tr:hover td {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 320px;
+        }
+
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .navbar-brand i {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark mb-4 px-4 py-3">
+    <div class="container-fluid">
+        <span class="navbar-brand fs-4"><i class="bi bi-satellite-fill me-2"></i>Starlink Lab</span>
+        <span id="statusBadge" class="status-badge status-idle">
+            <span class="pulse-dot">●</span> Ready
+        </span>
+    </div>
+</nav>
+
+<div class="container pb-5">
+    <!-- Stats Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="glass-card stat-card">
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-hdd-stack-fill"></i>
+                </div>
+                <div class="stat-value" id="statTotal">—</div>
+                <div class="stat-label">Total Usage (GB)</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card stat-card">
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                </div>
+                <div class="stat-value" id="statPeak">—</div>
+                <div class="stat-label">Peak Day (GB)</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card stat-card">
+                <div class="stat-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div class="stat-value" id="statAvg">—</div>
+                <div class="stat-label">Daily Average (GB)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="glass-card p-4 mb-4">
+        <h5 class="mb-4"><i class="bi bi-bar-chart-line me-2"></i>Usage Trend</h5>
+        <div class="chart-container">
+            <canvas id="usageChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="glass-card p-4 mb-4">
+        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+            <div>
+                <h5 class="mb-1">Data Scraper</h5>
+                <p class="text-secondary small mb-0">Extract daily history from Nov to Jun using saved Firefox session.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button id="btn" class="btn btn-scrape">
+                    <i class="bi bi-rocket-takeoff me-2"></i>Run Scraper
+                </button>
+                <a href="/download" id="dl" class="btn btn-download d-none">
+                    <i class="bi bi-download me-2"></i>Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div id="results" class="glass-card p-4 d-none">
+        <h5 class="mb-3"><i class="bi bi-table me-2"></i>Daily Records</h5>
+        <div style="max-height: 450px; overflow-y: auto;">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr><th>Date</th><th class="text-end">Data Usage (GB)</th></tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let chartInstance = null;
+
+    function updateStatus(state, text) {
+        const badge = document.getElementById('statusBadge');
+        badge.className = 'status-badge status-' + state;
+        const dot = state === 'running' ? '<span class="pulse">●</span> ' : '● ';
+        badge.innerHTML = dot + text;
+    }
+
+    function updateStats(data) {
+        if (!data || data.length === 0) return;
+        const usages = data.map(d => parseFloat(d['Data Usage (GB)']) || 0);
+        const total = usages.reduce((a, b) => a + b, 0);
+        const peak = Math.max(...usages);
+        const avg = total / usages.length;
+
+        document.getElementById('statTotal').textContent = total.toFixed(2);
+        document.getElementById('statPeak').textContent = peak.toFixed(2);
+        document.getElementById('statAvg').textContent = avg.toFixed(2);
+    }
+
+    function renderChart(data) {
+        const ctx = document.getElementById('usageChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+
+        const labels = data.map(d => d.Date);
+        const values = data.map(d => parseFloat(d['Data Usage (GB)']) || 0);
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Data Usage (GB)',
+                    data: values,
+                    backgroundColor: 'rgba(79, 195, 247, 0.6)',
+                    borderColor: 'rgba(79, 195, 247, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    hoverBackgroundColor: 'rgba(79, 195, 247, 0.9)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(20, 25, 40, 0.95)',
+                        titleColor: '#fff',
+                        bodyColor: '#e0e6ed',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        padding: 12
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.03)' },
+                        ticks: { color: '#8899aa', maxTicksLimit: 12 }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#8899aa' },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    document.getElementById('btn').onclick = function() {
+        const btn = this;
+        btn.disabled = true;
+        document.getElementById('results').classList.add('d-none');
+        document.getElementById('dl').classList.add('d-none');
+        updateStatus('running', 'Scraping...');
+
+        fetch('/scrape')
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    updateStatus('success', 'Done');
+                    updateStats(res.data);
+                    renderChart(res.data);
+
+                    const b = document.getElementById('tbody');
+                    b.innerHTML = '';
+                    res.data.forEach(item => {
+                        b.innerHTML += `<tr><td>${item.Date}</td><td class="text-end fw-semibold">${item['Data Usage (GB)']} GB</td></tr>`;
+                    });
+                    document.getElementById('results').classList.remove('d-none');
+                    document.getElementById('dl').classList.remove('d-none');
+                } else {
+                    updateStatus('error', 'Failed');
+                    alert("Error: " + res.message);
+                }
+                btn.disabled = false;
+            })
+            .catch(err => {
+                updateStatus('error', 'Error');
+                alert("Server error: " + err);
+                btn.disabled = false;
+            });
+    };
+</script>
+</body>
+</html>

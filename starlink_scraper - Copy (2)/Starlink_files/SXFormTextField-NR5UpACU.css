@@ -1,0 +1,1 @@
+.SXFormTextField--ssr .MuiFormLabel-root:has(+.MuiInputBase-root>input:not(:placeholder-shown)){visibility:hidden}
